@@ -13,21 +13,50 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "version-bump": "npm version ${npm_config_bump:-patch} -m \"v%s\" && git push && git push --tags"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "@types/node": "^25.5.0",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9",
     "typescript": "~6.0.2"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^(\\.\\.?\\/.+)\\.js$": "$1"
+    },
+    "collectCoverage": true,
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
   },
   "publishConfig": {
     "access": "public",

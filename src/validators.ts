@@ -1,14 +1,11 @@
 import type { RegistryIndex, ProjectMetadata, VersionMetadata } from './types.js'
 
-/** Tree-shakable optional validators. Import only what you need. */
-
 export function validateRegistryIndex(data: unknown): data is RegistryIndex {
   return (
     typeof data === 'object' &&
     data !== null &&
     'projects' in data &&
-    Array.isArray((data as Record<string, unknown>)['projects']) &&
-    ((data as RegistryIndex).projects).every((p) => typeof p === 'string')
+    Array.isArray((data as Record<string, unknown>)['projects'])
   )
 }
 

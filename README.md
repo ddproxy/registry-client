@@ -77,6 +77,49 @@ try {
 }
 ```
 
+## Registry Structure
+
+The `registry-client` expects the project registry to follow a specific directory and file structure, typically hosted as static JSON files.
+
+### Directory Layout
+```text
+/
+├── index.json                     # RegistryIndex
+└── projects/
+    ├── project-a.json             # ProjectMetadata
+    ├── project-b.json             # ProjectMetadata
+    └── project-a/
+        └── versions/
+            ├── index.json         # VersionMetadata[]
+            ├── v1.0.0.json        # VersionMetadata
+            └── v1.1.0.json        # VersionMetadata
+```
+
+### Data Models
+
+#### `RegistryIndex` (`index.json`)
+The main entry point for the registry.
+- `projects`: An array of project names (slugs) available in the registry.
+
+#### `ProjectMetadata` (`projects/{name}.json`)
+Contains high-level information about a project.
+- `name`: The project slug.
+- `displayName`: The human-readable name of the project.
+- `description`: A brief description of the project.
+- `tags`: An array of strings for categorization.
+- `repo`: An object containing repository links (e.g., `github`, `gitea`).
+- `latestVersion`: The string representing the latest stable version.
+- `license`: The license type (e.g., "MIT").
+
+#### `VersionMetadata` (`projects/{name}/versions/{version}.json` or `index.json`)
+Contains detailed information about a specific version or a list of all versions.
+- `version`: The version string (e.g., "v1.0.0").
+- `date`: The release date.
+- `changelog`: An array of strings describing changes.
+- `assets`: A record where keys are asset types (e.g., "source", "binary") and values are arrays of download URLs.
+- `repoLinks`: An object containing repository-specific links for this version (e.g., `githubTag`, `giteaTag`).
+- `license`: The license for this specific version.
+
 ## Development
 
 ### Build

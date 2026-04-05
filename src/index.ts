@@ -11,9 +11,18 @@ export { RegistryFetchError, RegistryNotFoundError, RegistryConfigurationError }
 
 import { fetchJson } from './fetch.js'
 import type { RegistryIndex, ProjectMetadata, VersionMetadata } from './types.js'
+import {
+  validateRegistryIndex,
+  validateProjectMetadata,
+  validateVersionMetadata,
+} from './validators.js'
 
 export async function getRegistryIndex(): Promise<RegistryIndex> {
-  return fetchJson<RegistryIndex>('index.json')
+  const data = await fetchJson<RegistryIndex>('index.json')
+  if (!validateRegistryIndex(data)) {
+    throw new Error('Invalid RegistryIndex received from registry.')
+  }
+  return data
 }
 
 export async function getProjects(): Promise<ProjectMetadata[]> {
@@ -22,13 +31,25 @@ export async function getProjects(): Promise<ProjectMetadata[]> {
 }
 
 export async function getProject(name: string): Promise<ProjectMetadata> {
-  return fetchJson<ProjectMetadata>(`projects/${name}.json`)
+  const data = await fetchJson<ProjectMetadata>(`projects/${name}.json`)
+  if (!validateProjectMetadata(data)) {
+    throw new Error(`Invalid ProjectMetadata received for project "${name}".`)
+  }
+  return data
 }
 
 export async function getVersions(name: string): Promise<VersionMetadata[]> {
-  return fetchJson<VersionMetadata[]>(`projects/${name}/versions/index.json`)
+  const data = await fetchJson<VersionMetadata[]>(`projects/${name}/versions/index.json`)
+  if (!Array.isArray(data) || !data.every(validateVersionMetadata)) {
+    throw new Error(`Invalid version index received for project "${name}".`)
+  }
+  return data
 }
 
 export async function getVersion(name: string, version: string): Promise<VersionMetadata> {
-  return fetchJson<VersionMetadata>(`projects/${name}/versions/${version}.json`)
+  const data = await fetchJson<VersionMetadata>(`projects/${name}/versions/${version}.json`)
+  if (!validateVersionMetadata(data)) {
+    throw new Error(`Invalid VersionMetadata received for project "${name}" version "${version}".`)
+  }
+  return data
 }
