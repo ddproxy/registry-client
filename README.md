@@ -1,10 +1,6 @@
-# Project Registry Client
+# @ddproxy/registry-client
 
-A TypeScript client for interacting with a project registry. This client provides easy access to project metadata, version information, and registry indices.
-
-## Purpose
-
-The `registry-client` is designed to simplify the process of fetching and consuming data from a project registry, typically hosted as a set of JSON files. It handles configuration, fetching, and basic caching of registry resources.
+TypeScript client for fetching data from a [project registry](https://github.com/ddproxy/project-registry). Handles configuration, HTTP fetching, validation, and in-memory caching.
 
 ## Installation
 
@@ -12,130 +8,144 @@ The `registry-client` is designed to simplify the process of fetching and consum
 npm install @ddproxy/registry-client
 ```
 
+Published to the GitHub Package Registry. Ensure your `.npmrc` points to the right registry:
+
+```
+@ddproxy:registry=https://npm.pkg.github.com
+```
+
 ## Usage
 
-### Configuration
+### Configure
 
-You must configure the client with the base URL of your project registry. You can also adjust caching settings.
+Call `configure` once before making any requests. `baseUrl` is required; all other options are optional.
 
 ```typescript
-import { configure } from '@ddproxy/registry-client';
+import { configure } from '@ddproxy/registry-client'
 
 configure({
-  baseUrl: 'https://your-project-registry.com/',
-  cache: true,
-  cacheTTL: 10 * 60 * 1000, // 10 minutes
-});
+  baseUrl: 'https://your-registry-host.com/path/to/registry/',
+  cache: true,          // default: true
+  cacheTTL: 5 * 60 * 1000, // default: 5 minutes
+})
 ```
 
-### Fetching Data
-
-The client provides several functions to fetch different parts of the registry.
+### Fetch registry data
 
 ```typescript
-import { 
-  getRegistryIndex, 
-  getProject, 
-  getVersions, 
-  getVersion 
-} from '@ddproxy/registry-client';
+import { getRegistryIndex, getProject, getProjects, getVersions, getVersion } from '@ddproxy/registry-client'
 
-async function example() {
-  // Get the main registry index
-  const index = await getRegistryIndex();
-  console.log('Projects:', index.projects);
+// Full list of project slugs
+const index = await getRegistryIndex()
 
-  // Get metadata for a specific project
-  const project = await getProject('my-project');
-  console.log('Project Metadata:', project);
+// All project metadata records
+const projects = await getProjects()
 
-  // Get all versions for a project
-  const versions = await getVersions('my-project');
-  console.log('Versions:', versions);
+// Single project
+const project = await getProject('my-project')
 
-  // Get specific version metadata
-  const version = await getVersion('my-project', '1.0.0');
-  console.log('Version Detail:', version);
-}
+// All versions for a project
+const versions = await getVersions('my-project')
+
+// Specific version
+const version = await getVersion('my-project', 'v1.0.0')
 ```
 
-### Error Handling
-
-The client throws specific errors for common issues.
+### Error handling
 
 ```typescript
-import { RegistryNotFoundError, RegistryFetchError } from '@ddproxy/registry-client';
+import { RegistryNotFoundError, RegistryFetchError, RegistryConfigurationError } from '@ddproxy/registry-client'
 
 try {
-  const project = await getProject('non-existent');
-} catch (error) {
-  if (error instanceof RegistryNotFoundError) {
-    console.error('Project not found');
-  } else if (error instanceof RegistryFetchError) {
-    console.error('Failed to fetch from registry:', error.message);
+  const project = await getProject('unknown')
+} catch (err) {
+  if (err instanceof RegistryNotFoundError) {
+    // 404 — project doesn't exist
+  } else if (err instanceof RegistryFetchError) {
+    // non-404 HTTP error — err.status, err.url
+  } else if (err instanceof RegistryConfigurationError) {
+    // configure() was not called or baseUrl is empty
   }
 }
 ```
 
-## Registry Structure
+### Cache control
 
-The `registry-client` expects the project registry to follow a specific directory and file structure, typically hosted as static JSON files.
+```typescript
+import { cacheClear } from '@ddproxy/registry-client'
 
-### Directory Layout
-```text
-/
-├── index.json                     # RegistryIndex
-└── projects/
-    ├── project-a.json             # ProjectMetadata
-    ├── project-b.json             # ProjectMetadata
-    └── project-a/
-        └── versions/
-            ├── index.json         # VersionMetadata[]
-            ├── v1.0.0.json        # VersionMetadata
-            └── v1.1.0.json        # VersionMetadata
+cacheClear() // invalidate all cached entries
 ```
 
-### Data Models
+## API
 
-#### `RegistryIndex` (`index.json`)
-The main entry point for the registry.
-- `projects`: An array of project names (slugs) available in the registry.
+| Export | Type | Description |
+|--------|------|-------------|
+| `configure(config)` | `(RegistryClientConfig) => void` | Set base URL and cache options |
+| `getConfig()` | `() => Required<RegistryClientConfig>` | Read current config |
+| `getRegistryIndex()` | `() => Promise<RegistryIndex>` | Fetch `index.json` |
+| `getProjects()` | `() => Promise<ProjectMetadata[]>` | Fetch all project records |
+| `getProject(name)` | `(string) => Promise<ProjectMetadata>` | Fetch one project record |
+| `getVersions(name)` | `(string) => Promise<VersionMetadata[]>` | Fetch version index for a project |
+| `getVersion(name, version)` | `(string, string) => Promise<VersionMetadata>` | Fetch one version record |
+| `cacheClear()` | `() => void` | Clear in-memory cache |
 
-#### `ProjectMetadata` (`projects/{name}.json`)
-Contains high-level information about a project.
-- `name`: The project slug.
-- `displayName`: The human-readable name of the project.
-- `description`: A brief description of the project.
-- `tags`: An array of strings for categorization.
-- `repo`: An object containing repository links (e.g., `github`, `gitea`).
-- `latestVersion`: The string representing the latest stable version.
-- `license`: The license type (e.g., "MIT").
+## Types
 
-#### `VersionMetadata` (`projects/{name}/versions/{version}.json` or `index.json`)
-Contains detailed information about a specific version or a list of all versions.
-- `version`: The version string (e.g., "v1.0.0").
-- `date`: The release date.
-- `changelog`: An array of strings describing changes.
-- `assets`: A record where keys are asset types (e.g., "source", "binary") and values are arrays of download URLs.
-- `repoLinks`: An object containing repository-specific links for this version (e.g., `githubTag`, `giteaTag`).
-- `license`: The license for this specific version.
+```typescript
+interface RegistryClientConfig {
+  baseUrl?: string
+  cache?: boolean
+  cacheTTL?: number
+}
+
+interface RegistryIndex {
+  projects: string[]
+}
+
+interface ProjectMetadata {
+  name: string
+  displayName: string
+  description: string
+  tags: string[]
+  repo: { github?: string; gitea?: string; [key: string]: string | undefined }
+  latestVersion: string
+  license: string
+}
+
+interface VersionMetadata {
+  version: string
+  date: string
+  changelog: string[]
+  assets: Record<string, string[]>
+  repoLinks: { githubTag?: string; giteaTag?: string; [key: string]: string | undefined }
+  license: string
+}
+```
+
+## Registry file structure
+
+```
+index.json
+projects/
+  {slug}.json
+  {slug}/
+    versions/
+      index.json
+      {version}.json
+```
 
 ## Development
 
-### Build
-
 ```bash
-npm run build
-```
-
-### Test
-
-```bash
-npm test
-```
-
-### Type Check
-
-```bash
+npm ci          # install dependencies
+npm run build   # compile TypeScript
+npm test        # run tests with coverage
 npm run type-check
 ```
+
+Coverage threshold is enforced at 80% across branches, functions, lines, and statements.
+
+## License
+
+MIT — Copyright (c) 2026 Jon West
