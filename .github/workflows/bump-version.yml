@@ -1,0 +1,35 @@
+name: bump-version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Type of bump (patch, minor, major)'
+        default: 'patch'
+        required: true
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "latest"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump version and push
+        run: npm run version-bump --bump=${{ github.event.inputs.bump }}

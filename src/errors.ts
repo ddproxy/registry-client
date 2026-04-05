@@ -1,3 +1,10 @@
+export class RegistryConfigurationError extends Error {
+  constructor(message?: string) {
+    super(message ?? 'Registry baseUrl is not configured. Call configure({ baseUrl: "..." }) before use.')
+    this.name = 'RegistryConfigurationError'
+  }
+}
+
 export class RegistryFetchError extends Error {
   readonly status: number
   readonly url: string

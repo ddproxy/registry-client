@@ -7,7 +7,7 @@ export type {
 
 export { configure, getConfig } from './config.js'
 export { cacheClear } from './cache.js'
-export { RegistryFetchError, RegistryNotFoundError } from './errors.js'
+export { RegistryFetchError, RegistryNotFoundError, RegistryConfigurationError } from './errors.js'
 
 import { fetchJson } from './fetch.js'
 import type { RegistryIndex, ProjectMetadata, VersionMetadata } from './types.js'

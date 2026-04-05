@@ -1,0 +1,36 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "latest"
+
+      - name: Install safe-chain
+        run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh -s -- --ci
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to Gitea
+        if: secrets.GITEA_NPM_REGISTRY_URL != '' && secrets.GITEA_TOKEN != ''
+        run: npm publish --registry=${{ secrets.GITEA_NPM_REGISTRY_URL }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Publish to GitHub
+        if: secrets.GITHUB_TOKEN != ''
+        run: npm publish --registry=https://npm.pkg.github.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

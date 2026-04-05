@@ -1,4 +1,4 @@
-import { configure, getRegistryIndex, getProjects, getProject, getVersions, getVersion } from '../src/index.js'
+import { configure, getRegistryIndex, getProjects, getProject, getVersions, getVersion, RegistryConfigurationError } from '../src/index.js'
 import { cacheClear } from '../src/cache.js'
 
 const mockIndex = { projects: ['my-project', 'another-project'] }
@@ -8,7 +8,7 @@ const mockProject = {
   displayName: 'My Project',
   description: 'A test project.',
   tags: ['code', 'tool'],
-  repo: { github: 'https://github.com/ddproxy/my-project' },
+  repo: { github: 'https://github.com/example/my-project' },
   latestVersion: 'v0.1.0',
   license: 'MIT',
 }
@@ -19,12 +19,12 @@ const mockVersionsIndex = [
     date: '2026-03-01',
     changelog: ['Initial release'],
     assets: { source: ['https://example.com/v0.1.0.tar.gz'] },
-    repoLinks: { githubTag: 'https://github.com/ddproxy/my-project/tree/v0.1.0' },
+    repoLinks: { githubTag: 'https://github.com/example/my-project/tree/v0.1.0' },
     license: 'MIT',
   },
 ]
 
-const mockVersion = mockVersionsIndex[0]!
+const mockVersion = mockVersionsIndex[0];
 
 function mockFetch(responses: Record<string, unknown>) {
   global.fetch = async (input: RequestInfo | URL) => {
@@ -120,5 +120,10 @@ describe('configure', () => {
     configure({ baseUrl: 'https://custom.example.com/registry/' })
     await getRegistryIndex()
     expect(capturedUrl).toBe('https://custom.example.com/registry/index.json')
+  })
+
+  it('throws RegistryConfigurationError if baseUrl is empty', async () => {
+    configure({ baseUrl: '' })
+    await expect(getRegistryIndex()).rejects.toMatchObject({ name: 'RegistryConfigurationError' })
   })
 })

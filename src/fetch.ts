@@ -1,9 +1,14 @@
 import { getConfig } from './config.js'
 import { cacheGet, cacheSet } from './cache.js'
-import { RegistryFetchError, RegistryNotFoundError } from './errors.js'
+import { RegistryFetchError, RegistryNotFoundError, RegistryConfigurationError } from './errors.js'
 
 export async function fetchJson<T>(path: string): Promise<T> {
   const config = getConfig()
+
+  if (!config.baseUrl) {
+    throw new RegistryConfigurationError()
+  }
+
   const url = config.baseUrl.replace(/\/$/, '') + '/' + path.replace(/^\//, '')
 
   if (config.cache) {
