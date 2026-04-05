@@ -28,4 +28,3 @@ jobs:
 
       - name: Run tests with coverage
         run: npm test
-

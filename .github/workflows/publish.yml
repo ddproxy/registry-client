@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: "latest"
+          node-version: "24"
 
       - name: Install safe-chain
         run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh -s -- --ci
@@ -28,7 +28,7 @@ jobs:
         run: npm run build
 
       - name: Publish to GitHub
-        if: github.repository_owner == 'ddproxy' || secrets.GITHUB_TOKEN != ''
+        if: github.repository_owner == 'ddproxy'
         run: npm publish --registry=https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
